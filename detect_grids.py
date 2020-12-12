@@ -1,4 +1,3 @@
-import time
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,7 +12,6 @@ image = []
 baw_array = []
 row = 0
 col = 0
-boxes = []
 threshold = 80
 num_boxes = 60
 grid_rows = 10
@@ -25,8 +23,7 @@ line_width_factor = 0.05
 colors = ['g', 'y', 'b', 'r']
 
 def find_boxes():
-    if boxes:
-        return boxes
+    boxes = []
     visited = set()
     for i in range(row):
         for j in range(col):
@@ -65,7 +62,6 @@ def _flood_fill(i, j, visited):
             stack.append((nr, nc))
             visited.add((nr, nc))
     return (c1, r1, c2, r2)
-
 
 def get_y_pos(box):
     a1, b1, a2, b2 = box
@@ -116,6 +112,8 @@ def decide_color(pixel):
         return 1
 
 def get_black_percentage(pixels):
+    if not pixels:
+        return 0
     mapped = list(map(decide_color, pixels))
     return sum(mapped) / len(mapped)
 
@@ -135,8 +133,7 @@ def decide_grid(grid):
             if perc > percentage_black_threshold:
                 row[x] = perc
         if len(row) > 0:
-            max_perc = max_key_value(row)
-            sub_grid[y] = max_perc
+            sub_grid[y] = max_key_value(row)
     return sub_grid
 
 def draw_grid(_ax, grid):
@@ -163,14 +160,6 @@ def get_leading_zero(num):
         return str("0") + str(num)
     else:
         return str(num)
-
-# fig,ax = plt.subplots(1)
-# ax.imshow(image, cmap='gray')
-
-#full_grid = calculate_checked_boxes()
-# for n in range(total_columns):
-#     for m in range(total_rows):
-#         draw_grid(ax, full_grid[m][n])
 
 all_files = [f for f in listdir('.') if isfile(f)]
 all_images = [f for f in all_files if f.endswith(".jpg") or f.endswith(".jpeg") or f.endswith(".png")]
@@ -203,4 +192,24 @@ for i, filename in enumerate(all_hours):
 
 book.save("output.xlsx")
 
-#plt.show()
+# img = Image.open('scheef.jpg')
+# img = img.convert('L')
+# image = np.array(img)
+
+# img = cv2.imread('scheef.jpg')
+# img = cv2.GaussianBlur(img,(5,5),cv2.BORDER_DEFAULT)
+# img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+# (thresh, baw) = cv2.threshold(img, 180, 255, cv2.THRESH_BINARY)
+
+# baw_array = np.array(baw)
+# row, col, = image.shape
+
+# fig,ax = plt.subplots(1)
+# ax.imshow(image, cmap='gray')
+
+# full_grid = calculate_checked_boxes()
+# for n in range(total_columns):
+#     for m in range(total_rows):
+#         draw_grid(ax, full_grid[m][n])
+
+# plt.show()
