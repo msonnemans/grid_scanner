@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import cv2
+import operator
+from openpyxl import Workbook
 
 img = Image.open(f'image.jpg')
 img = img.convert('L')
@@ -24,6 +26,8 @@ grid_rows = 10
 grid_columns = 4
 total_columns = 10
 total_rows = 6
+percentage_black_threshold = 0.3
+line_width_factor = 0.05
 
 def find_boxes():
     if boxes:
@@ -82,7 +86,7 @@ def get_sub_box(box, column, row):
     width = x2 - x1
     height = y2 - y1
 
-    line_width = width * 0.04
+    line_width = width * line_width_factor
 
     x1 = x1 + line_width
     y1 = y1 + line_width
@@ -124,21 +128,28 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
-def print_grid(grid):
-    for x in range(grid_rows):
-        s = ""
-        for y in range(grid_columns):
-            s = s + str(get_black_percentage(get_pixels_at_pos(grid, y, x)) > 0.3 and 1 or 0) + " "
-        print(s)
+def max_key_value(dic):
+    return max(dic, key=lambda key: dic[key])
+
+def decide_grid(grid):
+    sub_grid = {}
+    for y in range(grid_rows):
+        row = {}
+        for x in range(grid_columns):
+            perc = get_black_percentage(get_pixels_at_pos(grid, x, y))
+            if perc > percentage_black_threshold:
+                row[x] = perc
+        if len(row) > 0:
+            max_perc = max_key_value(row)
+            sub_grid[y] = max_perc
+    return sub_grid
 
 def draw_grid(_ax, grid):
-    for x in range(grid_rows):
-        for y in range(grid_columns):
-            if get_black_percentage(get_pixels_at_pos(grid, y, x)) > 0.3:
-                x1, y1, x2, y2 = get_sub_box(grid, y, x)
-                rect = patches.Rectangle((x1,y1),x2-x1,y2-y1,fill=True)
-                ax.add_patch(rect)
-
+    decided_grid = decide_grid(grid)
+    for y, x in decided_grid.items():
+        x1, y1, x2, y2 = get_sub_box(grid, x, y)
+        rect = patches.Rectangle((x1,y1),x2-x1,y2-y1,fill=True)
+        ax.add_patch(rect)
 
 def calculate_checked_boxes():
     grids = find_boxes()
@@ -149,13 +160,19 @@ def calculate_checked_boxes():
         full_grid.append(row)
     return full_grid
 
-
 fig,ax = plt.subplots(1)
 ax.imshow(image, cmap='gray')
 
 full_grid = calculate_checked_boxes()
-
 for n in range(total_columns):
     for m in range(total_rows):
         draw_grid(ax, full_grid[m][n])
+
+decided_grid = decide_grid(full_grid[0][0])
+book = Workbook()
+sh = book.active
+for y, x in decided_grid.items():
+    sh.cell(y+1, x+1, "1")
+book.save("test.xlsx")
+
 plt.show()
