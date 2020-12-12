@@ -6,19 +6,13 @@ import matplotlib.patches as patches
 import cv2
 import operator
 from openpyxl import Workbook
+from os import listdir
+from os.path import isfile, join
 
-img = Image.open(f'image.jpg')
-img = img.convert('L')
-image = np.array(img)
-
-img = cv2.imread('image.jpg')
-img = cv2.GaussianBlur(img,(5,5),cv2.BORDER_DEFAULT)
-img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-(thresh, baw) = cv2.threshold(img, 180, 255, cv2.THRESH_BINARY)
-
-baw_array = np.array(baw)
-
-row, col = image.shape
+image = []
+baw_array = []
+row = 0
+col = 0
 boxes = []
 threshold = 80
 num_boxes = 60
@@ -28,6 +22,7 @@ total_columns = 10
 total_rows = 6
 percentage_black_threshold = 0.3
 line_width_factor = 0.05
+colors = ['g', 'y', 'b', 'r']
 
 def find_boxes():
     if boxes:
@@ -160,19 +155,52 @@ def calculate_checked_boxes():
         full_grid.append(row)
     return full_grid
 
-fig,ax = plt.subplots(1)
-ax.imshow(image, cmap='gray')
+def get_color_from_row_index(row):
+    return colors[row]
 
-full_grid = calculate_checked_boxes()
-for n in range(total_columns):
-    for m in range(total_rows):
-        draw_grid(ax, full_grid[m][n])
+def get_leading_zero(num):
+    if num < 10 :
+        return str("0") + str(num)
+    else:
+        return str(num)
 
-decided_grid = decide_grid(full_grid[0][0])
+# fig,ax = plt.subplots(1)
+# ax.imshow(image, cmap='gray')
+
+#full_grid = calculate_checked_boxes()
+# for n in range(total_columns):
+#     for m in range(total_rows):
+#         draw_grid(ax, full_grid[m][n])
+
+all_files = [f for f in listdir('.') if isfile(f)]
+all_images = [f for f in all_files if f.endswith(".jpg") or f.endswith(".jpeg") or f.endswith(".png")]
+all_hours = [f for f in all_images if f.split('.')[0].isnumeric()]
+
 book = Workbook()
 sh = book.active
-for y, x in decided_grid.items():
-    sh.cell(y+1, x+1, "1")
-book.save("test.xlsx")
+for i, filename in enumerate(all_hours):
+    hour = int(filename.split('.')[0])
+    for n in range(60):
+        sh.cell((i * 60) + n+1, 1, get_leading_zero(hour) + ":" + get_leading_zero(n))
+    
+    img = Image.open(filename)
+    img = img.convert('L')
+    image = np.array(img)
 
-plt.show()
+    img = cv2.imread(filename)
+    img = cv2.GaussianBlur(img,(5,5),cv2.BORDER_DEFAULT)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    (thresh, baw) = cv2.threshold(img, 180, 255, cv2.THRESH_BINARY)
+
+    baw_array = np.array(baw)
+    row, col = image.shape
+
+    full_grid = calculate_checked_boxes()
+    for n in range(total_columns):
+        for m in range(total_rows):
+            for y, x in decide_grid(full_grid[m][n]).items():
+                sh.cell((i * 60) + m+y+1, n+2, get_color_from_row_index(x))
+
+book.save("output.xlsx")
+
+#plt.show()
