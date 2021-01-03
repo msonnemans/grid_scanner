@@ -2,6 +2,7 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.colors as mcolors
 import cv2
 import operator
 from openpyxl import Workbook
@@ -185,18 +186,18 @@ for i, filename in enumerate(all_hours):
     row, col = image.shape
 
     full_grid = calculate_checked_boxes()
-    for n in range(total_columns):
+    for n in range(total_columns):   
         for m in range(total_rows):
             for y, x in decide_grid(full_grid[m][n]).items():
-                sh.cell((i * 60) + m+y+1, n+2, get_color_from_row_index(x))
+                sh.cell((i * 60) + (m*10)+y+1, n+2, get_color_from_row_index(x))
 
 book.save("output.xlsx")
 
-# img = Image.open('scheef.jpg')
+# img = Image.open('08.jpg')
 # img = img.convert('L')
 # image = np.array(img)
 
-# img = cv2.imread('scheef.jpg')
+# img = cv2.imread('08.jpg')
 # img = cv2.GaussianBlur(img,(5,5),cv2.BORDER_DEFAULT)
 # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 # (thresh, baw) = cv2.threshold(img, 180, 255, cv2.THRESH_BINARY)
@@ -208,6 +209,11 @@ book.save("output.xlsx")
 # ax.imshow(image, cmap='gray')
 
 # full_grid = calculate_checked_boxes()
+# for row in full_grid:
+#     for box in row:
+#         x1, y1, x2, y2 = box
+#         rect = patches.Rectangle((x1,y1),x2-x1,y2-y1,fill=False,lw=1,color=mcolors.CSS4_COLORS['lime'])
+#         ax.add_patch(rect)
 # for n in range(total_columns):
 #     for m in range(total_rows):
 #         draw_grid(ax, full_grid[m][n])
